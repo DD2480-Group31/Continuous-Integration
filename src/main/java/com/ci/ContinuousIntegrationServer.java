@@ -55,6 +55,10 @@ public class ContinuousIntegrationServer extends AbstractHandler
 
         pushRequest = new JSONObject(request.getReader().lines().collect(Collectors.joining()));
 
+        repOwner = pushRequest.getJSONObject("repository").getJSONObject("owner").getString("name");
+        repName = pushRequest.getJSONObject("repository").getString("name");
+        sha = pushRequest.getString("after");
+
         // here you do all the continuous integration tasks
         // for example
         // 1st clone your repository
