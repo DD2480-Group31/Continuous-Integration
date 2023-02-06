@@ -3,6 +3,7 @@ package com.ci;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.util.stream.Collectors;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.servlet.ServletException;
@@ -29,6 +30,8 @@ public class ContinuousIntegrationServer extends AbstractHandler
     private String repName;
     private String sha;
 
+    private JSONObject pushRequest;
+
     enum CommitStatus {
         error,
         failure,
@@ -49,6 +52,9 @@ public class ContinuousIntegrationServer extends AbstractHandler
         baseRequest.setHandled(true);
 
         System.out.println(target);
+
+        pushRequest = new JSONObject(request.getReader().lines().collect(Collectors.joining()));
+
         // here you do all the continuous integration tasks
         // for example
         // 1st clone your repository
