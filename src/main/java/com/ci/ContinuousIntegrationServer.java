@@ -63,7 +63,6 @@ public class ContinuousIntegrationServer extends AbstractHandler {
 
     public ContinuousIntegrationServer(String statusToken) {
         TOKEN = statusToken;
-        System.out.println(statusToken);
     }
 
     public void handle(String target,
