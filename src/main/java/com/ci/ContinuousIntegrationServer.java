@@ -129,23 +129,6 @@ public class ContinuousIntegrationServer extends AbstractHandler {
         System.out.println("Gradle/JUnit works");
     }
  
-    /**
-     * Clones the git repository specified by repoCloneURL into the directory specified by DIR_PATH.
-     * @return The exit value of the "git clone repoName DIR_PATH" command.
-     * @throws IOException
-     * @throws InterruptedException
-     * 
-     */
-    private int cloneRepo() throws IOException, InterruptedException{
-        String[] cmdarr = {"git", "clone", "-b", branch, repoCloneURL, DIR_PATH};
-        Process p = Runtime.getRuntime().exec(cmdarr);
-
-        p.waitFor();
-        int exitValue = p.exitValue();
-        p.destroy();
-
-        return exitValue;
-    }
 
     /**
      * Builds the branch that was cloned into the target directory.
