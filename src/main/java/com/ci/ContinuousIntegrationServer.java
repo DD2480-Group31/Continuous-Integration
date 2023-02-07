@@ -13,6 +13,7 @@ import javax.servlet.ServletException;
  
 import java.io.IOException;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.io.File;
  
@@ -21,33 +22,33 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.json.JSONException;
 import org.json.JSONObject;
 
+import org.eclipse.jgit.api.Git;
 import org.dom4j.Document;
-import org.dom4j.DocumentFactory;
 import org.dom4j.DocumentException;
-import org.dom4j.io.SAXReader;
 import org.dom4j.Node;
+import org.dom4j.io.SAXReader;
+
+
 /** 
  Skeleton of a ContinuousIntegrationServer which acts as webhook
  See the Jetty documentation for API documentation of those classes.
 */
-public class ContinuousIntegrationServer extends AbstractHandler
-{  
-    final static int GROUP_NUMBER = 31;
-    final static int PORT = 8000 + GROUP_NUMBER;
+public class ContinuousIntegrationServer extends AbstractHandler {  
     final static String DIR_PATH = "target";
     final static String testXMLDIR_PATH = DIR_PATH + "/build/test-results/test/";
-
-    private String TOKEN;
+    final private String TOKEN;
 
     private String repOwner;
     private String repName;
     private String sha;
     private String repoCloneURL;
     private String branch;
-
+    
     private JSONObject pushRequest;
+    private Git repository;
 
     enum CommitStatus {
         error,
@@ -60,6 +61,10 @@ public class ContinuousIntegrationServer extends AbstractHandler
         success,
         buildFail,
         testFail
+    }
+
+    public ContinuousIntegrationServer(String statusToken) {
+        TOKEN = statusToken;
     }
 
     public void handle(String target,
@@ -85,16 +90,21 @@ public class ContinuousIntegrationServer extends AbstractHandler
         // Set pending status
         postStatus(CommitStatus.pending, "Building repository and running tests...");
 
-       try {
-            // Download target repository
-            this.cloneRepo();
-            // Build the cloned repository
+        try {
+            // Update target repository and checkout to the correct branch.
+            repository = GitUtils.updateTarget(repoCloneURL, branch);
+            // Build the cloneld repository
             this.build();
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             postStatus(CommitStatus.error, "CI server encountered an error");
-            response.getWriter().println("Server interrupted");
+            response.getWriter().println("Server error");
             response.setStatus(500);
+
+            // Close the repository if we're returning early
+            if (repository != null) {
+                repository.close();
+            }
             return;
         }
         
@@ -109,7 +119,7 @@ public class ContinuousIntegrationServer extends AbstractHandler
             default:
                 postStatus(CommitStatus.success, "Build complete and all tests passed");
         }
-
+        repository.close();
         response.getWriter().println("CI job done");
     }
 
@@ -171,7 +181,7 @@ public class ContinuousIntegrationServer extends AbstractHandler
         JSONObject body = new JSONObject();
         body.put("state", status.toString());
         body.put("description", description);
-        
+
         DataOutputStream out = new DataOutputStream(con.getOutputStream());
         out.writeBytes(body.toString());
         out.flush();
@@ -254,23 +264,26 @@ public class ContinuousIntegrationServer extends AbstractHandler
     }
 
     /**
-     * Helper-method to specifically delete the 'target'
-     * directory where we build/test the system under test.
+     * Helper-method to specifically delete the `build`
+     * directory within the `target` directory.
      */
-    private static void cleanTargetDir(){
-        Path targetDir = FileSystems.getDefault().getPath("./target");
+    private static void cleanTargetBuild(){
+        Path targetDir = FileSystems.getDefault().getPath("./target/build");
         cleanup(targetDir.toFile());
     }
 
     // used to start the CI server in command line
     public static void main(String[] args) throws Exception
     {    
-        Server server = new Server(PORT);
-        server.setHandler(new ContinuousIntegrationServer()); 
+        JSONObject conf = new JSONObject(Files.readString(Path.of("config.json")));
+        int port = conf.getInt("port");
+        String statusToken = conf.getString("status-token");
+        Server server = new Server(port);
+        server.setHandler(new ContinuousIntegrationServer(statusToken)); 
         server.start();
         server.join();
 
         // Call to cleanup the target directory
-        //cleanTargetDir();
+        //cleanTargetBuild();
     }
 }

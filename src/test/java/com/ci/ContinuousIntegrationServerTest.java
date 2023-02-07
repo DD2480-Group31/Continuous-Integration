@@ -6,7 +6,7 @@ import java.io.IOException;
 
 public class ContinuousIntegrationServerTest {
 
-        ContinuousIntegrationServer DEFAULT = new ContinuousIntegrationServer();
+        ContinuousIntegrationServer DEFAULT = new ContinuousIntegrationServer("");
         //Example: Typical test syntax
         @Test
         public void verifyNoExceptionsThrown(){
