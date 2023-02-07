@@ -30,6 +30,10 @@ dependencies {
     implementation group: 'org.json', name: 'json', version: '20220924'
     // https://mvnrepository.com/artifact/org.eclipse.jgit/org.eclipse.jgit
     implementation group: 'org.eclipse.jgit', name: 'org.eclipse.jgit', version: '6.4.0.202211300538-r'
+    // https://mvnrepository.com/artifact/dom4j/dom4j
+    implementation group: 'dom4j', name: 'dom4j', version: '1.6.1'
+
+    implementation group: 'jaxen', name: 'jaxen', version: '1.1.1'
 
 }
 

@@ -26,14 +26,21 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import org.eclipse.jgit.api.Git;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.Node;
+import org.dom4j.io.SAXReader;
+
 
 /** 
  Skeleton of a ContinuousIntegrationServer which acts as webhook
  See the Jetty documentation for API documentation of those classes.
-*/
+*/ 
 public class ContinuousIntegrationServer extends AbstractHandler {  
     final static String DIR_PATH = "target";
     final static String CI_CONTEXT = "Custom CI Server";
+    final static String testXMLDIR_PATH = DIR_PATH + "/build/test-results/test/";
+
     final private String TOKEN;
 
     private String repOwner;
@@ -103,8 +110,7 @@ public class ContinuousIntegrationServer extends AbstractHandler {
             return;
         }
         
-        var res = analyzeResults();
-
+        BuildStatus res = analyzeResults();
         switch (res) {
             case buildFail:
                 postStatus(CommitStatus.failure, "Build failed");
@@ -119,15 +125,12 @@ public class ContinuousIntegrationServer extends AbstractHandler {
         response.getWriter().println("CI job done");
     }
 
-    // TODO: Implement this method!
-    private BuildStatus analyzeResults() {
-        return BuildStatus.success;
-    }
 
     //Method for JUnit to initially try
     public void gradleTest(){
         System.out.println("Gradle/JUnit works");
     }
+ 
 
     /**
      * Builds the branch that was cloned into the target directory.
@@ -180,6 +183,56 @@ public class ContinuousIntegrationServer extends AbstractHandler {
             throw new IOException(con.getResponseMessage());
         }
         con.disconnect();
+    }
+
+    /**
+     * Read the XML document containing the results of tests.
+     * @return The resulting </code>BuildStatus res</code> of analyzing the test results of the build. 
+     * </code>BuildStatus.buildFail</code> if an exception is thrown when parsing the XML document,
+     * </code>BuildStatus.testFail</code> if the number of failed tests is > 0 and </code>BuildStatus.success</code>
+     * if the number of failed tests is 0.
+     */
+    private BuildStatus analyzeResults(){
+        Document[] docs = null;
+        BuildStatus res = BuildStatus.success;
+        try{
+            docs = parseXML();
+            for(int i = 0; i < docs.length; i++){
+                if(docs[i] == null){
+                    continue;
+                }
+                Node node = docs[i].selectSingleNode("/testsuite"); //select 'testuite' element
+                int failures = Integer.parseInt(node.valueOf("@failures")); //select 'failures' attribute
+                if(failures > 0){
+                    //a test has failed, status must be testFail
+                    res = BuildStatus.testFail;
+                    break;
+                }
+            }
+        }catch(DocumentException dE){
+            //Something went wrong with the XML document, something went wrong before testing.
+            res = BuildStatus.buildFail;
+        }       
+        return res;
+    }
+    /**
+     * Helper function to get J4DOM document object from XML document.
+     * @return Array of object </code>Doducment</code> containing XML document with test results.
+     */
+    private Document[] parseXML() throws DocumentException { 
+        SAXReader reader = new SAXReader();
+        File filePath = new File(testXMLDIR_PATH);
+        File[] allFiles = filePath.listFiles();
+        Document[] docs = new Document[allFiles.length]; 
+        for(int i = 0; i < docs.length; i++){
+            if(!allFiles[i].isDirectory()){
+                docs[i] = reader.read(allFiles[i]);
+            }
+            else{
+                docs[i] = null;
+            }
+        }
+        return docs;
     }
 
     /**
