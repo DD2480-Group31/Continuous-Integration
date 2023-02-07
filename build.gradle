@@ -28,6 +28,10 @@ dependencies {
     implementation group: 'org.eclipse.jetty', name: 'jetty-server', version: '10.0.13'
     // https://mvnrepository.com/artifact/org.json/json
     implementation group: 'org.json', name: 'json', version: '20220924'
+    //https://mvnrepository.com/artifact/dom4j/dom4j
+    implementation group: 'dom4j', name: 'dom4j', version: '1.6.1'
+
+    implementation group: 'jaxen', name: 'jaxen', version: '1.1.1'
 }
 
 mainClassName = 'com.ci.ContinuousIntegrationServer'

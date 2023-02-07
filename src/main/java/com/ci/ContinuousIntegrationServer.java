@@ -23,6 +23,11 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.json.JSONObject;
 
+import org.dom4j.Document;
+import org.dom4j.DocumentFactory;
+import org.dom4j.DocumentException;
+import org.dom4j.io.SAXReader;
+import org.dom4j.Node;
 /** 
  Skeleton of a ContinuousIntegrationServer which acts as webhook
  See the Jetty documentation for API documentation of those classes.
@@ -150,6 +155,28 @@ public class ContinuousIntegrationServer extends AbstractHandler
             throw new IOException(con.getResponseMessage());
         }
         con.disconnect();
+    }
+
+    /**
+     * Read the XML document containing the results of tests.
+     * @return Number of failures in the tests.
+     * @throws DocumentException
+     * 
+     */
+    private static int analyzeBuild() throws DocumentException{       
+        Document doc = parseXML();
+        Node node = doc.selectSingleNode("/testsuite");
+        int failures = Integer.parseInt(node.valueOf("@failures"));
+        return failures;
+    }
+    /**
+     * Helper function to get J4DOM document object from XML document.
+     * @return J4DOM Document
+     */
+    private static Document parseXML() throws DocumentException { 
+        SAXReader reader = new SAXReader();
+        Document document = reader.read("D:\\DD2480-Fundamentals\\DD2480-Group31-CI\\build\\test-results\\test\\TEST-com.ci.ContinuousIntegrationServerTest.xml");
+        return document;
     }
 
     /**
