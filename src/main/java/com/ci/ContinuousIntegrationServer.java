@@ -35,10 +35,11 @@ import org.dom4j.io.SAXReader;
 /** 
  Skeleton of a ContinuousIntegrationServer which acts as webhook
  See the Jetty documentation for API documentation of those classes.
-*/
+*/ 
 public class ContinuousIntegrationServer extends AbstractHandler {  
     final static String DIR_PATH = "target";
     final static String testXMLDIR_PATH = DIR_PATH + "/build/test-results/test/";
+
     final private String TOKEN;
 
     private String repOwner;
@@ -250,8 +251,16 @@ public class ContinuousIntegrationServer extends AbstractHandler {
      * Helper-method to specifically delete the `build`
      * directory within the `target` directory.
      */
-    private static void cleanTargetBuild(){
+    private static void cleanBuild(){
         Path targetDir = FileSystems.getDefault().getPath("./target/build");
+        cleanup(targetDir.toFile());
+    }
+
+    /**
+     * Helper-method to specifically delete the entire `target` directory.
+     */
+    private static void cleanTarget(){
+        Path targetDir = FileSystems.getDefault().getPath("./target");
         cleanup(targetDir.toFile());
     }
 
@@ -265,8 +274,5 @@ public class ContinuousIntegrationServer extends AbstractHandler {
         server.setHandler(new ContinuousIntegrationServer(statusToken)); 
         server.start();
         server.join();
-
-        // Call to cleanup the target directory
-        //cleanTargetBuild();
     }
 }
