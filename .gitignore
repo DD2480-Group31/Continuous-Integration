@@ -45,3 +45,6 @@ build
 
 #Avoid 'target' build folder
 target
+
+# Ignore config.json file
+config.json
