@@ -36,6 +36,8 @@ public class ContinuousIntegrationServer extends AbstractHandler
 {  
     final static int GROUP_NUMBER = 31;
     final static int PORT = 8000 + GROUP_NUMBER;
+    final static String DIR_PATH = "target";
+    final static String testXMLDIR_PATH = DIR_PATH + "/build/test-results/test/";
 
     private String TOKEN;
 
@@ -44,8 +46,7 @@ public class ContinuousIntegrationServer extends AbstractHandler
     private String sha;
     private String repoCloneURL;
     private String branch;
-    private String dirPath = "./target";
-    
+
     private JSONObject pushRequest;
 
     enum CommitStatus {
@@ -55,7 +56,11 @@ public class ContinuousIntegrationServer extends AbstractHandler
         success
     }
 
-    
+    enum BuildStatus {
+        success,
+        buildFail,
+        testFail
+    }
 
     public void handle(String target,
                        Request baseRequest,
@@ -77,12 +82,37 @@ public class ContinuousIntegrationServer extends AbstractHandler
         repoCloneURL = pushRequest.getJSONObject("repository").getString("clone_url");
         branch = pushRequest.getString("ref").split("/")[2];
 
-        // here you do all the continuous integration tasks
-        // for example
-        // 1st clone your repository
-        // 2nd compile the code
+        // Set pending status
+        postStatus(CommitStatus.pending, "Building repository and running tests...");
+
+       try {
+            // Download target repository
+            this.cloneRepo();
+            // Build the cloned repository
+            this.build();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            postStatus(CommitStatus.error, "CI server encountered an error");
+            response.getWriter().println("Server interrupted");
+            response.setStatus(500);
+            return;
+        }
+        
+        BuildStatus res = analyzeResults();
+        switch (res) {
+            case buildFail:
+                postStatus(CommitStatus.failure, "Build failed");
+                break;
+            case testFail:
+                postStatus(CommitStatus.failure, "Build complete but one or more tests failed");
+                break;
+            default:
+                postStatus(CommitStatus.success, "Build complete and all tests passed");
+        }
+
         response.getWriter().println("CI job done");
     }
+
 
     //Method for JUnit to initially try
     public void gradleTest(){
@@ -90,17 +120,14 @@ public class ContinuousIntegrationServer extends AbstractHandler
     }
  
     /**
-     * Clones the git repository specified by repoCloneURL into the directory specified by dirPath.
-     * @param repoCloneURL The URL of the git repository to clone.
-     * @param branch The specific branch of the git repository to be clone.
-     * @param dirPath The path to where the repository should be cloned.
-     * @return The exit value of the "git clone repoName dirPath" command.
+     * Clones the git repository specified by repoCloneURL into the directory specified by DIR_PATH.
+     * @return The exit value of the "git clone repoName DIR_PATH" command.
      * @throws IOException
      * @throws InterruptedException
      * 
      */
     private int cloneRepo() throws IOException, InterruptedException{
-        String[] cmdarr = {"git", "clone", "-b", branch, repoCloneURL, dirPath};
+        String[] cmdarr = {"git", "clone", "-b", branch, repoCloneURL, DIR_PATH};
         Process p = Runtime.getRuntime().exec(cmdarr);
 
         p.waitFor();
@@ -110,8 +137,13 @@ public class ContinuousIntegrationServer extends AbstractHandler
         return exitValue;
     }
 
-    private void build() {
-
+    /**
+     * Builds the branch that was cloned into the target directory.
+     */
+    private void build() throws IOException, InterruptedException {
+        String[] arguments = {"./gradlew", "build"};
+        Process process = Runtime.getRuntime().exec(arguments, null, new File(DIR_PATH));
+        process.waitFor();
     }
 
     /**
@@ -159,24 +191,52 @@ public class ContinuousIntegrationServer extends AbstractHandler
 
     /**
      * Read the XML document containing the results of tests.
-     * @return Number of failures in the tests.
-     * @throws DocumentException
-     * 
+     * @return The resulting </code>BuildStatus res</code> of analyzing the test results of the build. 
+     * </code>BuildStatus.buildFail</code> if an exception is thrown when parsing the XML document,
+     * </code>BuildStatus.testFail</code> if the number of failed tests is > 0 and </code>BuildStatus.success</code>
+     * if the number of failed tests is 0.
      */
-    private static int analyzeBuild() throws DocumentException{       
-        Document doc = parseXML();
-        Node node = doc.selectSingleNode("/testsuite");
-        int failures = Integer.parseInt(node.valueOf("@failures"));
-        return failures;
+    private BuildStatus analyzeResults(){
+        Document[] docs = null;
+        BuildStatus res = BuildStatus.success;
+        try{
+            docs = parseXML();
+            for(int i = 0; i < docs.length; i++){
+                if(docs[i] == null){
+                    continue;
+                }
+                Node node = docs[i].selectSingleNode("/testsuite"); //select 'testuite' element
+                int failures = Integer.parseInt(node.valueOf("@failures")); //select 'failures' attribute
+                if(failures > 0){
+                    //a test has failed, status must be testFail
+                    res = BuildStatus.testFail;
+                    break;
+                }
+            }
+        }catch(DocumentException dE){
+            //Something went wrong with the XML document, something went wrong before testing.
+            res = BuildStatus.buildFail;
+        }       
+        return res;
     }
     /**
      * Helper function to get J4DOM document object from XML document.
-     * @return J4DOM Document
+     * @return Array of object </code>Doducment</code> containing XML document with test results.
      */
-    private static Document parseXML() throws DocumentException { 
+    private Document[] parseXML() throws DocumentException { 
         SAXReader reader = new SAXReader();
-        Document document = reader.read("D:\\DD2480-Fundamentals\\DD2480-Group31-CI\\build\\test-results\\test\\TEST-com.ci.ContinuousIntegrationServerTest.xml");
-        return document;
+        File filePath = new File(testXMLDIR_PATH);
+        File[] allFiles = filePath.listFiles();
+        Document[] docs = new Document[allFiles.length]; 
+        for(int i = 0; i < docs.length; i++){
+            if(!allFiles[i].isDirectory()){
+                docs[i] = reader.read(allFiles[i]);
+            }
+            else{
+                docs[i] = null;
+            }
+        }
+        return docs;
     }
 
     /**

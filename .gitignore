@@ -42,3 +42,6 @@ build
 
 #Avoid vscode files(should probably be global for each dev)
 *.vscode
+
+#Avoid 'target' build folder
+target
