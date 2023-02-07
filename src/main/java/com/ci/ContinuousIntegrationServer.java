@@ -33,6 +33,7 @@ import org.eclipse.jgit.api.Git;
 */
 public class ContinuousIntegrationServer extends AbstractHandler {  
     final static String DIR_PATH = "target";
+    final static String CI_CONTEXT = "Custom CI Server";
     final private String TOKEN;
 
     private String repOwner;
@@ -162,6 +163,7 @@ public class ContinuousIntegrationServer extends AbstractHandler {
         JSONObject body = new JSONObject();
         body.put("state", status.toString());
         body.put("description", description);
+        body.put("context", CI_CONTEXT);
 
         DataOutputStream out = new DataOutputStream(con.getOutputStream());
         out.writeBytes(body.toString());
