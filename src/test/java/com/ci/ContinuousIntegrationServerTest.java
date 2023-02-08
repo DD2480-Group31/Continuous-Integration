@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.io.File;
+import com.ci.ContinuousIntegrationServer.BuildStatus;
 
 public class ContinuousIntegrationServerTest {
 
@@ -190,6 +191,51 @@ public class ContinuousIntegrationServerTest {
             DEFAULT.cleanTarget();
             assertFalse(Files.isDirectory(targetPath));
         }
+
+        @Test
+        /*
+         * Requirements: analyzeResults() must return </code>BuildStatus.success</code> if the "failures" attribute of the 
+         * "testsuite" element is 0 in the test result XML.
+         * Contract:
+         *      Precondition: The "testdummies/pass" directory contains a XML testfile where failures = 0.
+         *      Postcondition: analyzeResults() returns </code>BuildStatus.success</code>.
+         */
+        public void testAnalyzeResultsNoTestFails(){
+            String testPath = "src/test/testdummies/pass";
+
+            BuildStatus bs = DEFAULT.analyzeResults(testPath);
+            assertEquals(BuildStatus.success, bs);
+        }
+        @Test
+        /*
+         * Requirements: analyzeResults() must return </code>BuildStatus.testFail</code> if the "failures" attribute 
+         * of the "testsuite" element is > 0 in the test result XML.
+         * Contract:
+         *      Precondition: The "testdummies/fail" directory contains a XML testfile where failures > 0.
+         *      Postcondition: analyzeResults() returns </code>BuildStatus.testFail</code>.
+         */
+        public void testAnalyzeResultsWithTestFails(){
+            String testPath = "src/test/testdummies/fail";
+
+            BuildStatus bs = DEFAULT.analyzeResults(testPath);
+            assertEquals(BuildStatus.testFail, bs);
+        }
+
+        @Test
+        /*
+         * Requirements: analyzeResults() must return </code>BuildStatus.buildFail</code> if the
+         * directory which should contain teh XML file is empty.
+         * Contract:
+         *      Precondition: The "testdummies/empty" directory is empty.
+         *      Postcondition: analyzeResults() returns </code>BuildStatus.buildFail</code>.
+         */
+        public void testAnalyzeResultsNoXMLFile(){
+            String testPath = "src/test/testdummies/empty";
+
+            BuildStatus bs = DEFAULT.analyzeResults(testPath);
+            assertEquals(BuildStatus.buildFail, bs);
+        }
+
 
 
 

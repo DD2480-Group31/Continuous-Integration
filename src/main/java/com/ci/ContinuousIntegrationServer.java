@@ -17,7 +17,8 @@ import java.nio.file.Files;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.io.File;
- 
+import java.io.FileNotFoundException;
+
 import org.eclipse.jetty.server.Server;
 
 import org.eclipse.jetty.server.Request;
@@ -125,8 +126,10 @@ public class ContinuousIntegrationServer extends AbstractHandler {
             }
             return;
         }
+
         System.out.println("\tBuild complete, analyzing test result...");
-        BuildStatus res = analyzeResults();
+        BuildStatus res = analyzeResults(testXMLDIR_PATH);
+
         switch (res) {
             case buildFail:
                 postStatus(CommitStatus.failure, "Build failed");
@@ -213,11 +216,12 @@ public class ContinuousIntegrationServer extends AbstractHandler {
      * </code>BuildStatus.testFail</code> if the number of failed tests is > 0 and </code>BuildStatus.success</code>
      * if the number of failed tests is 0.
      */
-    private BuildStatus analyzeResults(){
+    public BuildStatus analyzeResults(String testXMLDirPath){
         Document[] docs = null;
         BuildStatus res = BuildStatus.success;
         try{
-            docs = parseXML();
+            docs = parseXML(testXMLDirPath);
+            if(docs.length == 0) return BuildStatus.buildFail; // test directory was empty, build failed
             for(int i = 0; i < docs.length; i++){
                 if(docs[i] == null){
                     continue;
@@ -230,7 +234,7 @@ public class ContinuousIntegrationServer extends AbstractHandler {
                     break;
                 }
             }
-        }catch(DocumentException dE){
+        }catch(Exception e){
             //Something went wrong with the XML document, something went wrong before testing.
             res = BuildStatus.buildFail;
         }       
@@ -240,11 +244,12 @@ public class ContinuousIntegrationServer extends AbstractHandler {
      * Helper function to get J4DOM document object from XML document.
      * @return Array of object </code>Doducment</code> containing XML document with test results.
      */
-    private Document[] parseXML() throws DocumentException { 
+    private Document[] parseXML(String testXMLDirPath) throws DocumentException, FileNotFoundException { 
         SAXReader reader = new SAXReader();
-        File filePath = new File(testXMLDIR_PATH);
+        File filePath = new File(testXMLDirPath);
         File[] allFiles = filePath.listFiles();
-        Document[] docs = new Document[allFiles.length]; 
+        if(allFiles == null) throw new FileNotFoundException();
+        Document[] docs = new Document[allFiles.length];
         for(int i = 0; i < docs.length; i++){
             if(!allFiles[i].isDirectory()){
                 docs[i] = reader.read(allFiles[i]);
