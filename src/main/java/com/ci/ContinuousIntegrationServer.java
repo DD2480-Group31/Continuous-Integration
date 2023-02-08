@@ -17,7 +17,8 @@ import java.nio.file.Files;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.io.File;
- 
+import java.io.FileNotFoundException;
+
 import org.eclipse.jetty.server.Server;
 
 import org.eclipse.jetty.server.Request;
@@ -230,7 +231,7 @@ public class ContinuousIntegrationServer extends AbstractHandler {
                     break;
                 }
             }
-        }catch(DocumentException dE){
+        }catch(Exception e){
             //Something went wrong with the XML document, something went wrong before testing.
             res = BuildStatus.buildFail;
         }       
@@ -240,11 +241,12 @@ public class ContinuousIntegrationServer extends AbstractHandler {
      * Helper function to get J4DOM document object from XML document.
      * @return Array of object </code>Doducment</code> containing XML document with test results.
      */
-    private Document[] parseXML(String testXMLDirPath) throws DocumentException { 
+    private Document[] parseXML(String testXMLDirPath) throws DocumentException, FileNotFoundException { 
         SAXReader reader = new SAXReader();
         File filePath = new File(testXMLDirPath);
         File[] allFiles = filePath.listFiles();
-        Document[] docs = new Document[allFiles.length]; 
+        if(allFiles == null) throw new FileNotFoundException();
+        Document[] docs = new Document[allFiles.length];
         for(int i = 0; i < docs.length; i++){
             if(!allFiles[i].isDirectory()){
                 docs[i] = reader.read(allFiles[i]);
