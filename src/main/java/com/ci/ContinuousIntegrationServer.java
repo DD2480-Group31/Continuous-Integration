@@ -46,9 +46,9 @@ public class ContinuousIntegrationServer extends AbstractHandler {
     final private String TOKEN;
     final private String MAIN_BRANCH;
 
-    private String repOwner;
-    private String repName;
-    private String sha;
+    String repOwner;
+    String repName;
+    String sha;
     private String repoCloneURL;
     private String branch;
     
@@ -171,10 +171,11 @@ public class ContinuousIntegrationServer extends AbstractHandler {
      * 
      * @param status the status of the commit message
      * @param description a more helpful description of the status
-     * @throws IOException if the request response is not <code>201</code>.
-     * @throws Error if all neccessary fields are not set. 
+     * @throws IOException
+     * @throws Error if all neccessary fields are not set.
+     * @return the response code for the post request.
      */
-    private void postStatus(CommitStatus status, String description) throws IOException, Error {
+    public int postStatus(CommitStatus status, String description) throws IOException, Error {
         if (repOwner == null || repName == null || sha == null) {
             throw new Error("One or more of the necessary fields `repOwner`, `repName`, and `sha` is not set.");
         }
@@ -204,9 +205,10 @@ public class ContinuousIntegrationServer extends AbstractHandler {
         int code = con.getResponseCode();
         if (code != 201) {
             System.out.println(String.format("Error when setting commit status! (%d)", code));
-            throw new IOException(con.getResponseMessage());
+            System.out.println(con.getResponseMessage());
         }
         con.disconnect();
+        return code;
     }
 
     /**
