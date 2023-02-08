@@ -30,26 +30,28 @@ public class GitUtilsTest {
      *                     updated the local repository.
      */
     public void testUpdateTargetSelf() throws Exception{
-
+        //Properly set up the arguments to clone the repo and checkout the `assessment` branch
         String testCloneURLSelf = "https://github.com/DD2480-Group31/Continuous-Integration.git";
         String testBranchSelf = "assessment";
         String testDefaultBranch = "master";
+
+        //Update the local repo
         Git testRepo = GitUtils.updateTarget(testCloneURLSelf, testBranchSelf, testDefaultBranch);
 
-        //org.eclipse.jgit.api.Status statusBefore = testRepo.status().call();
-
+        //Retrieve the difference between the local `assessment` branch and the 
+        //remote `origin/assessment` branch.
         ProcessBuilder gitDiff = new ProcessBuilder("git", "diff", "origin/assessment");
         gitDiff.directory(new File("./target"));
         gitDiff.redirectOutput(new File("./target/diff.txt"));
         Process process = gitDiff.start();
         process.waitFor();
         
-
+        //The redirected output from the difference between the branches has to be 0 when updated.
         File diff = new File("./target/diff.txt");
         assertTrue(diff.length() == 0);
 
+        //Clean target-directory
         testRepo.close();
-        //Clean target
         ContinuousIntegrationServer.cleanTarget();
 
     }
@@ -65,26 +67,27 @@ public class GitUtilsTest {
      *                     0 characters since the branches contain different code.
      */
     public void testUpdateTargetBranchDiff() throws Exception{
-
+        //Properly set up the arguments to clone the repo and checkout the `assessment` branch
         String testCloneURLSelf = "https://github.com/DD2480-Group31/Continuous-Integration.git";
         String testBranchSelf = "assessment";
         String testDefaultBranch = "master";
         Git testRepo = GitUtils.updateTarget(testCloneURLSelf, testBranchSelf, testDefaultBranch);
 
-        //org.eclipse.jgit.api.Status statusBefore = testRepo.status().call();
-
+        //Retrieve the difference between the local `assessment` branch and the 
+        //remote `origin/issue-9` branch.
         ProcessBuilder gitDiff = new ProcessBuilder("git", "diff", "origin/issue-9");
         gitDiff.directory(new File("./target"));
         gitDiff.redirectOutput(new File("./target/diff.txt"));
         Process process = gitDiff.start();
         process.waitFor();
         
-
+        //The redirected output from the difference between the branches has to be 
+        //greater than 0 since they contain different code.
         File diff = new File("./target/diff.txt");
         assertTrue(diff.length() > 0);
 
+        //Clean target-directory
         testRepo.close();
-        //Clean target
         ContinuousIntegrationServer.cleanTarget();
 
     }
@@ -99,11 +102,12 @@ public class GitUtilsTest {
      *      Postcondition: `updateTarget` throws `java.lang.Exception.class`
      */
     public void testUpdateTargetInvalidBranch() throws Exception{
-
+        //Setup arguments for updateTarget with an invalid checkout branch.
         String testCloneURLSelf = "https://github.com/DD2480-Group31/Continuous-Integration.git";
-        String testBranchSelf = "IDoNotExist";
+        String testBranchSelf = "IDoNotExist"; //Branch does not exist
         String testDefaultBranch = "master";
 
+        //Check that the invalid call throws `java.lang.Exception.class`
         assertThrows(java.lang.Exception.class, () -> GitUtils.updateTarget(testCloneURLSelf, testBranchSelf, testDefaultBranch));
 
         //Clean target
@@ -122,11 +126,12 @@ public class GitUtilsTest {
      *      Postcondition: `updateTarget` throws `java.lang.Exception.class`
      */
     public void testUpdateTargetInvalidMain() throws Exception{
-
+        //Setup arguments for updateTarget with an invalid `default` branch.
         String testCloneURLSelf = "https://github.com/DD2480-Group31/Continuous-Integration.git";
         String testBranchSelf = "assessment";
-        String testDefaultBranch = "main"; //branch does not exist
+        String testDefaultBranch = "main"; //branch does not exist, master is the default branch.
 
+        //Check that the invalid call throws `java.lang.Exception.class`
         assertThrows(java.lang.Exception.class, () -> GitUtils.updateTarget(testCloneURLSelf, testBranchSelf, testDefaultBranch));
 
         //Clean target
@@ -147,7 +152,7 @@ public class GitUtilsTest {
     public void testUpdateTargetInvalidURL() throws Exception{
         
         //Setup arguments for updateTarget with an invalid URL.
-        String testCloneURLSelf = "invalidURL";
+        String testCloneURLSelf = "invalidURL"; //Invalid
         String testBranchSelf = "assessment";
         String testDefaultBranch = "master";
 
