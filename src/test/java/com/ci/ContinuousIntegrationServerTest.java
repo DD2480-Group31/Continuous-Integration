@@ -1,4 +1,5 @@
 package com.ci;
+import org.eclipse.jgit.api.Git;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import java.io.IOException;
@@ -270,6 +271,44 @@ public class ContinuousIntegrationServerTest {
             }catch(Exception e){exitVal = -1;};
 
             assertNotEquals(0, exitVal);
+        }
+
+
+        @Test
+        /**
+         * Requirements: build() successfully builds the repository in the `target`-directory
+         * Contract:
+         *      Precondition: The repository is cloned and updated in the `target`-directory
+         *                    and checksout the `master` branch.
+         *      Postcondition: `build()` successfully builds and tests the repository with `./gradlew build`
+         */
+        public void testBuildSuccess() throws Exception{
+            try{
+                ContinuousIntegrationServer.cleanTarget();
+            }catch(Exception e){
+
+            }
+            
+            //Setup the arguments to clone the repository to `target` and checkout the `master` branch
+            String testCloneURLSelf = "https://github.com/DD2480-Group31/Continuous-Integration.git";
+            String testBranchSelf = "master";
+            String testDefaultBranch = "master";
+
+            //Update the repository in the `target` directory
+            Git testRepo = GitUtils.updateTarget(testCloneURLSelf, testBranchSelf, testDefaultBranch);
+
+            String DIR_PATH = "target";
+
+            //Build the project
+            int exitVal = DEFAULT.build(DIR_PATH);
+
+
+            //Exit value is 0 on normal termination.
+            assertTrue(exitVal == 0);
+
+            //Clean the target-directory
+            testRepo.close();
+            ContinuousIntegrationServer.cleanTarget();
         }
 
 
