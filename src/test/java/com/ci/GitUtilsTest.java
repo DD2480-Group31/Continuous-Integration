@@ -37,7 +37,12 @@ public class GitUtilsTest {
     @AfterClass
     public static void cleanTarget() {
         testRepo.close();
-        cleanTarget();
+        try{
+            ContinuousIntegrationServer.cleanTarget();
+        }catch(Exception e){
+            //Continue if the directory didn't exist
+        }
+        
     }
 
     @Test
@@ -146,8 +151,8 @@ public class GitUtilsTest {
         String testBranchSelf = "assessment";
         String testDefaultBranch = "master";
 
-        //Invalid URL passed to updateTarget --> throw `java.lang.Exception.class`
-        assertThrows(java.lang.Exception.class, () -> GitUtils.updateTarget(testCloneURLSelf, testBranchSelf, testDefaultBranch));
+        //Invalid URL passed to updateTarget --> throw `IllegalArgumentException`
+        assertThrows(IllegalArgumentException.class, () -> GitUtils.updateTarget(testCloneURLSelf, testBranchSelf, testDefaultBranch));
 
     }
 
