@@ -98,8 +98,10 @@ public class ContinuousIntegrationServer extends AbstractHandler {
             return;
         } else {
             response.setStatus(HttpServletResponse.SC_ACCEPTED);
-            response.getWriter().println("Recieved push request, building project...");
-            response.flushBuffer();
+            var out = response.getWriter();
+            out.println("Recieved push request, building project...");
+            out.flush();
+            out.close();
         }
 
         // Set pending status
