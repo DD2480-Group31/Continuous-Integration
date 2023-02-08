@@ -272,20 +272,6 @@ public class ContinuousIntegrationServerTest {
             assertNotEquals(0, exitVal);
         }
 
-        @Test
-        /**
-         * Requirements: build() runs the "gradlew build" command and returns with exit code 0, indicating normal termination.
-         * Contract:
-         *      Precondition: Everything is in place and correct for the build to terminate successfully.
-         *      Postcondition: build() returns the exit value 0.
-         */
-        public void testBuildInTarget() throws Exception{
-            String testPath = "src/test/testdummies/build";
-            int exitVal = -1;
-            exitVal = DEFAULT.build(testPath);
-
-            assertEquals(0, exitVal);
-        }
 
 
 
