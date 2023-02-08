@@ -46,6 +46,7 @@ public class GitUtils {
             repository.checkout().setName("origin/" + branch).call();
         } catch (Exception e) {
             // TODO: Better error handling?
+            repository.close(); //Needs to close an invalid repo for deletion.
             e.printStackTrace();
             throw new Exception("Error encountered in `pullAndBranch`");
         }
