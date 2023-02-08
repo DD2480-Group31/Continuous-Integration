@@ -82,8 +82,6 @@ public class ContinuousIntegrationServer extends AbstractHandler {
         response.setContentType("text/html;charset=utf-8");
         response.setStatus(HttpServletResponse.SC_OK);
         baseRequest.setHandled(true);
-        
-        System.out.println(target);
 
         pushRequest = new JSONObject(request.getReader().lines().collect(Collectors.joining()));
 
@@ -93,8 +91,11 @@ public class ContinuousIntegrationServer extends AbstractHandler {
         repoCloneURL = pushRequest.getJSONObject("repository").getString("clone_url");
         branch = pushRequest.getString("ref").split("/")[2];
 
+        System.out.println("Processing request on branch \"" + branch + "\"");
+
         // Respond to the Github servers before building anything:
         if (sha.matches("^0+$")) {
+            System.out.println("\tMerge commit, aborting");
             response.getWriter().println("SHA was zero, no build was tested.");
             return;
         } else {
@@ -107,10 +108,12 @@ public class ContinuousIntegrationServer extends AbstractHandler {
 
         // Set pending status
         postStatus(CommitStatus.pending, "Building repository and running tests...");
+        System.out.println("\tSet commit status to pending");
 
         try {
             // Update target repository and checkout to the correct branch.
             repository = GitUtils.updateTarget(repoCloneURL, branch, MAIN_BRANCH);
+            System.out.println("\tUpdated target repository, building project...");
             // Build the cloneld repository
             this.build();
         } catch (Exception e) {
@@ -123,8 +126,10 @@ public class ContinuousIntegrationServer extends AbstractHandler {
             }
             return;
         }
-        
+
+        System.out.println("\tBuild complete, analyzing test result...");
         BuildStatus res = analyzeResults(testXMLDIR_PATH);
+
         switch (res) {
             case buildFail:
                 postStatus(CommitStatus.failure, "Build failed");
@@ -135,6 +140,12 @@ public class ContinuousIntegrationServer extends AbstractHandler {
             default:
                 postStatus(CommitStatus.success, "Build complete and all tests passed");
         }
+        
+        //Build complete, remove the `build` folder
+        System.out.println("\tBuild-analyzis complete, removing the build-directory...");
+        cleanBuild();
+        System.out.println("\tBuild-directory successfully removed.");
+
         repository.close();
     }
 
