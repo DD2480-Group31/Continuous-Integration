@@ -67,6 +67,11 @@ public class GitUtils {
         try {
             repository = Git.open(gitDir);     
         } catch (IOException e) {
+            // If the target folder exists but has weird stuff in it, delete it.
+            if (new File(ContinuousIntegrationServer.DIR_PATH).isDirectory()) {
+                ContinuousIntegrationServer.cleanTarget();
+            }
+            System.out.println("\tNo git repository found, cloning from url...");
             repository = cloneRepo(url);
         }
         pullAndBranch(repository, branch, mainBranch);
