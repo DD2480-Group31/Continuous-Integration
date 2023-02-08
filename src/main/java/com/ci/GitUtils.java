@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 
 import org.eclipse.jgit.api.Git;
+import org.apache.commons.validator.routines.UrlValidator;
 
 /**
  * Various utility functions for Git stuff.
@@ -46,6 +47,7 @@ public class GitUtils {
             repository.checkout().setName("origin/" + branch).call();
         } catch (Exception e) {
             // TODO: Better error handling?
+            repository.close(); //Needs to close an invalid repo for deletion.
             e.printStackTrace();
             throw new Exception("Error encountered in `pullAndBranch`");
         }
@@ -61,8 +63,12 @@ public class GitUtils {
      * @param mainBranch the name of the main branch for the repository
      * @throws Exception 
      */
-    public static Git updateTarget(String url, String branch, String mainBranch) throws Exception {
+    public static Git updateTarget(String url, String branch, String mainBranch) throws Exception, IllegalArgumentException {
         File gitDir = new File(ContinuousIntegrationServer.DIR_PATH + "/.git");
+        UrlValidator urlValidator = new UrlValidator();
+        if(!urlValidator.isValid(url)){
+            throw new IllegalArgumentException("URL is invalid.");
+        }
         Git repository;
         try {
             repository = Git.open(gitDir);     
