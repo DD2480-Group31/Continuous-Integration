@@ -280,7 +280,7 @@ public class ContinuousIntegrationServerTest {
          *      Postcondition: build() returns the exit value 0.
          */
         public void testBuildInTarget() throws Exception{
-            String testPath = "target";
+            String testPath = "src/test/testdummies/build";
             int exitVal = -1;
             exitVal = DEFAULT.build(testPath);
 
