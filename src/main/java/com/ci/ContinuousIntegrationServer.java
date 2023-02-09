@@ -128,7 +128,6 @@ public class ContinuousIntegrationServer extends AbstractHandler {
             return;
         }
 
- Issue-51
         BuildStatus res;
         if(buildExitValue == 0){
             res = analyzeResults(testXMLDIR_PATH);
