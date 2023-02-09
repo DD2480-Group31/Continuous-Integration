@@ -110,12 +110,13 @@ public class ContinuousIntegrationServer extends AbstractHandler {
         postStatus(CommitStatus.pending, "Building repository and running tests...");
         System.out.println("\tSet commit status to pending");
 
+        int buildExitValue = -1;
         try {
             // Update target repository and checkout to the correct branch.
             repository = GitUtils.updateTarget(repoCloneURL, branch, MAIN_BRANCH);
             System.out.println("\tUpdated target repository, building project...");
             // Build the cloneld repository
-            this.build();
+            buildExitValue = this.build(DIR_PATH);
         } catch (Exception e) {
             e.printStackTrace();
             postStatus(CommitStatus.error, "CI server encountered an error");
@@ -127,8 +128,16 @@ public class ContinuousIntegrationServer extends AbstractHandler {
             return;
         }
 
+        BuildStatus res;
+        if(buildExitValue == 0){
+            res = analyzeResults(testXMLDIR_PATH);
+        }else{
+            res = BuildStatus.buildFail;
+        }
+
         System.out.println("\tBuild complete, analyzing test result...");
-        BuildStatus res = analyzeResults(testXMLDIR_PATH);
+        res = analyzeResults(testXMLDIR_PATH);
+
 
         switch (res) {
             case buildFail:
@@ -159,10 +168,11 @@ public class ContinuousIntegrationServer extends AbstractHandler {
     /**
      * Builds the branch that was cloned into the target directory.
      */
-    private void build() throws IOException, InterruptedException {
+    public int build(String dirPath) throws IOException, InterruptedException {
         String[] arguments = {"./gradlew", "build"};
-        Process process = Runtime.getRuntime().exec(arguments, null, new File(DIR_PATH));
+        Process process = Runtime.getRuntime().exec(arguments, null, new File(dirPath));
         process.waitFor();
+        return process.exitValue();
     }
 
     /**

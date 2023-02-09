@@ -236,7 +236,41 @@ public class ContinuousIntegrationServerTest {
             assertEquals(BuildStatus.buildFail, bs);
         }
 
+        @Test
+        /**
+         * Requirements: build() throws an exception when the target directory does not exist.
+         * Contract:
+         *      Precondition: The "doesNotExist" directory does not exist.
+         *      Postcondition: build() throws an exception, exitVal is not equal to 0.
+         */
+        public void testBuildTargetMissing(){
+            String testPath = "doesNotExist";
+            int exitVal = 0;
+            try{
+                exitVal = DEFAULT.build(testPath);
+            }catch(Exception e){
+                exitVal = -1;
+            };
 
+            assertNotEquals(0, exitVal);
+        }
+
+        @Test
+        /**
+         * Requirements: build() throws an exception when the target directory does not contain a "gradlew" script.
+         * Contract:
+         *      Precondition: The "gradlew" script does not exist in the "src" directory.
+         *      Postcondition: build() throws an exception, exitVal is not equal to 0.
+         */
+        public void testBuildNoGradleScript(){
+            String testPath = "src";
+            int exitVal = 0;
+            try{
+                exitVal = DEFAULT.build(testPath);
+            }catch(Exception e){exitVal = -1;};
+
+            assertNotEquals(0, exitVal);
+        }
 
 
 
