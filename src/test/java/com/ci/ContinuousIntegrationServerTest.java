@@ -15,6 +15,7 @@ public class ContinuousIntegrationServerTest {
         @Test
         public void verifyNoExceptionsThrown(){
             DEFAULT.gradleTest();
+            assertTrue(false);
         }
 
         @Test
