@@ -14,18 +14,34 @@
 After following the setup steps/requirements above, the server can be run by running `./gradlew run` from the project root. This will start a server on the configured `port` which can then be forwarded by [ngrok](https://ngrok.com/) or some other hosting software.
 
 ## Statements of Contribution:
-#### Sebastian Veijalainen:
-- Initial implementation of cloneRepo() (this was revised later)
-- Implementation of analyzeResults() (parsing XML files containing test results)
-- Tests for analyzeResults()
-- Tests for build()
-- Parts of handle()-method (collaboratory)
+### Sebastian Veijalainen:
+- Initial implementation of `cloneRepo` (this was revised later)
+- Implementation of `analyzeResults` (parsing XML files containing test results)
+- Tests for `analyzeResults`
+- Tests for `build`
+- Parts of `handle` method (collaboratory)
 - Code reviews
 
-#### Jonas Sävås:
+### Jonas Sävås:
 - Gradle setup with GitHub Actions
-- Cleanup method to remove build-directory and target-directory
-- Tests for cleanup build/target
+- `cleanup` method to remove build-directory and target-directory
+- Tests for `cleanup` build/target
 - Tests for git functions (updating/cloning)
-- Small contribution in the handle method (collaboratory)
+- Small contribution in the `handle` method (collaboratory)
 - Code Review
+
+### Samuel Falk
+- Setup server on a raspberry pi
+- Implementation of `postStatus` (create commit status)
+- Implementatin of git features
+- Tests for `postStatus`
+- Parts of `handle` (Collaboratory)
+- Structuring of server config (`config.json`)
+- Code reviews
+
+### Simon Blom
+- Implemented the `build` function.
+- Worked on the functionality of logging build history.
+
+## Analyzis of Team (SEMAT)
+We would say that we fulfill most of the applicable points in the checklist for the “Seeded” category, and to some extent the “Formed” category, and would therefore put ourselves in between these two. We have reached a relatively productive state where all members can operate individually in parallel. However, everything is still not 100% clear and we have continuous discussion about various ways of organizing the work/workflow to be more productive. 
