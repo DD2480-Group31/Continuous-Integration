@@ -21,3 +21,11 @@ After following the setup steps/requirements above, the server can be run by run
 - Tests for build()
 - Parts of handle()-method (collaboratory)
 - Code reviews
+
+#### Jonas Sävås:
+- Gradle setup with GitHub Actions
+- Cleanup method to remove build-directory and target-directory
+- Tests for cleanup build/target
+- Tests for git functions (updating/cloning)
+- Small contribution in the handle method (collaboratory)
+- Code Review
