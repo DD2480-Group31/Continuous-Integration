@@ -12,3 +12,12 @@
 
 ## Running the Server
 After following the setup steps/requirements above, the server can be run by running `./gradlew run` from the project root. This will start a server on the configured `port` which can then be forwarded by [ngrok](https://ngrok.com/) or some other hosting software.
+
+## Statements of Contribution:
+#### Sebastian Veijalainen:
+- Initial implementation of cloneRepo() (this was revised later)
+- Implementation of analyzeResults() (parsing XML files containing test results)
+- Tests for analyzeResults()
+- Tests for build()
+- Parts of handle()-method (collaboratory)
+- Code reviews
