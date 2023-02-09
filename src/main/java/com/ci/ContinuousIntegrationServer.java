@@ -136,7 +136,7 @@ public class ContinuousIntegrationServer extends AbstractHandler {
         }
 
         System.out.println("\tBuild complete, analyzing test result...");
-        BuildStatus res = analyzeResults(testXMLDIR_PATH);
+        res = analyzeResults(testXMLDIR_PATH);
 
 
         switch (res) {
