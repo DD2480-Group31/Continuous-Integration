@@ -46,9 +46,9 @@ public class ContinuousIntegrationServer extends AbstractHandler {
     final private String TOKEN;
     final private String MAIN_BRANCH;
 
-    private String repOwner;
-    private String repName;
-    private String sha;
+    String repOwner;
+    String repName;
+    String sha;
     private String repoCloneURL;
     private String branch;
     
@@ -82,8 +82,6 @@ public class ContinuousIntegrationServer extends AbstractHandler {
         response.setContentType("text/html;charset=utf-8");
         response.setStatus(HttpServletResponse.SC_OK);
         baseRequest.setHandled(true);
-        
-        System.out.println(target);
 
         pushRequest = new JSONObject(request.getReader().lines().collect(Collectors.joining()));
 
@@ -93,8 +91,11 @@ public class ContinuousIntegrationServer extends AbstractHandler {
         repoCloneURL = pushRequest.getJSONObject("repository").getString("clone_url");
         branch = pushRequest.getString("ref").split("/")[2];
 
+        System.out.println("Processing request on branch \"" + branch + "\"");
+
         // Respond to the Github servers before building anything:
         if (sha.matches("^0+$")) {
+            System.out.println("\tMerge commit, aborting");
             response.getWriter().println("SHA was zero, no build was tested.");
             return;
         } else {
@@ -107,11 +108,13 @@ public class ContinuousIntegrationServer extends AbstractHandler {
 
         // Set pending status
         postStatus(CommitStatus.pending, "Building repository and running tests...");
+        System.out.println("\tSet commit status to pending");
 
         int buildExitValue = -1;
         try {
             // Update target repository and checkout to the correct branch.
             repository = GitUtils.updateTarget(repoCloneURL, branch, MAIN_BRANCH);
+            System.out.println("\tUpdated target repository, building project...");
             // Build the cloneld repository
             buildExitValue = this.build(DIR_PATH);
         } catch (Exception e) {
@@ -125,12 +128,17 @@ public class ContinuousIntegrationServer extends AbstractHandler {
             return;
         }
 
+ Issue-51
         BuildStatus res;
         if(buildExitValue == 0){
             res = analyzeResults(testXMLDIR_PATH);
         }else{
             res = BuildStatus.buildFail;
         }
+
+        System.out.println("\tBuild complete, analyzing test result...");
+        BuildStatus res = analyzeResults(testXMLDIR_PATH);
+
 
         switch (res) {
             case buildFail:
@@ -142,6 +150,12 @@ public class ContinuousIntegrationServer extends AbstractHandler {
             default:
                 postStatus(CommitStatus.success, "Build complete and all tests passed");
         }
+        
+        //Build complete, remove the `build` folder
+        System.out.println("\tBuild-analyzis complete, removing the build-directory...");
+        cleanBuild();
+        System.out.println("\tBuild-directory successfully removed.");
+
         repository.close();
     }
 
@@ -168,10 +182,11 @@ public class ContinuousIntegrationServer extends AbstractHandler {
      * 
      * @param status the status of the commit message
      * @param description a more helpful description of the status
-     * @throws IOException if the request response is not <code>201</code>.
-     * @throws Error if all neccessary fields are not set. 
+     * @throws IOException
+     * @throws Error if all neccessary fields are not set.
+     * @return the response code for the post request.
      */
-    private void postStatus(CommitStatus status, String description) throws IOException, Error {
+    public int postStatus(CommitStatus status, String description) throws IOException, Error {
         if (repOwner == null || repName == null || sha == null) {
             throw new Error("One or more of the necessary fields `repOwner`, `repName`, and `sha` is not set.");
         }
@@ -201,9 +216,10 @@ public class ContinuousIntegrationServer extends AbstractHandler {
         int code = con.getResponseCode();
         if (code != 201) {
             System.out.println(String.format("Error when setting commit status! (%d)", code));
-            throw new IOException(con.getResponseMessage());
+            System.out.println(con.getResponseMessage());
         }
         con.disconnect();
+        return code;
     }
 
     /**
